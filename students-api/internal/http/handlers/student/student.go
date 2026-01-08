@@ -9,11 +9,13 @@ import (
 	"net/http"
 
 	"github.com/ahmad-mujtaba1996/api_crud_operations_goLang/internal/response"
+	"github.com/ahmad-mujtaba1996/api_crud_operations_goLang/internal/storage"
 	"github.com/ahmad-mujtaba1996/api_crud_operations_goLang/internal/types"
 	"github.com/go-playground/validator/v10"
 )
 
-func Create() http.HandlerFunc {
+// Storage is passed to the handler to interact with the database. It's called dependency injection.
+func New(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Creating a Student")
 
@@ -38,6 +40,19 @@ func Create() http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSON(w, http.StatusCreated, map[string]string{"success": "OK"})
+		lastId, err := storage.CreateStudent(
+			student.Name,
+			student.Email,
+			student.Age,
+		)
+
+		slog.Info("User created with id ", slog.String("id", fmt.Sprintf("%d", lastId)))
+
+		if err != nil {
+			response.WriteJSON(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.WriteJSON(w, http.StatusCreated, map[string]string{"success": "OK", "id": fmt.Sprintf("%d", lastId)}) //fmt.Sprintf to convert int64 to string
 	}
 }
