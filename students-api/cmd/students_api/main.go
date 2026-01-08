@@ -12,12 +12,18 @@ import (
 
 	"github.com/ahmad-mujtaba1996/api_crud_operations_goLang/internal/config"
 	"github.com/ahmad-mujtaba1996/api_crud_operations_goLang/internal/http/handlers/student"
+	"github.com/ahmad-mujtaba1996/api_crud_operations_goLang/internal/storage/sqlite"
 )
 
 func main() {
 	// load config
 	cfg := config.MustLoad()
 	// database setup
+	_, err := sqlite.New(cfg)
+	if err != nil {
+		log.Fatal("failed to setup database ", err.Error())
+	}
+	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
 	// setup router
 	router := http.NewServeMux()
 	router.HandleFunc("POST /api/students", student.Create())
