@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ahmad-mujtaba1996/api_crud_operations_goLang/internal/config"
+	"github.com/ahmad-mujtaba1996/api_crud_operations_goLang/internal/http/handlers/student"
 )
 
 func main() {
@@ -19,9 +20,7 @@ func main() {
 	// database setup
 	// setup router
 	router := http.NewServeMux()
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to students api"))
-	})
+	router.HandleFunc("POST /api/students", student.Create())
 	// setup server
 	server := http.Server{
 		Addr:    cfg.Address,
@@ -32,12 +31,13 @@ func main() {
 
 	//--------------------------------------------------- Graceful shutdown
 	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM) // Need to study when to use which signal.
+
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT) // Need to study when to use which signal.
 
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil {
-			log.Fatal("failed to start server", err.Error())
+			log.Fatal("failed to start server ", err.Error())
 		}
 	}()
 
@@ -49,7 +49,7 @@ func main() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("failed to shutdown server", slog.String("error", err.Error()))
+		slog.Error("failed to shutdown server ", slog.String("error", err.Error()))
 	}
 
 	slog.Info("server shutdown successfully")
