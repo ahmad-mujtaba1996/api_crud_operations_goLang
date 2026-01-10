@@ -58,7 +58,7 @@ func New(storage storage.Storage) http.HandlerFunc {
 	}
 }
 
-func GetById(storage storage.Storage) http.HandlerFunc {
+func GetStudentById(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		slog.Info("Getting student by id", slog.String("id", id))
@@ -131,5 +131,26 @@ func UpdateStudent(storage storage.Storage) http.HandlerFunc {
 			return
 		}
 		response.WriteJSON(w, http.StatusOK, updatedStudent)
+	}
+}
+
+func DeleteStudent(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		slog.Info("Deleting student by ", slog.String("id", id))
+
+		intId, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			response.WriteJSON(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("invalid id")))
+			return
+		}
+		error := storage.DeleteStudent(intId)
+		if error != nil {
+			slog.Error("error getting user", slog.String("id", id))
+			response.WriteJSON(w, http.StatusInternalServerError, response.GeneralError(error))
+			return
+		}
+
+		response.WriteJSON(w, http.StatusOK, map[string]string{"success": "OK", "id": fmt.Sprintf("%d", intId)}) //fmt.Sprintf to convert int64 to string
 	}
 }
