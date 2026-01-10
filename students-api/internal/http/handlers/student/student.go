@@ -90,3 +90,46 @@ func GetStudentsList(storage storage.Storage) http.HandlerFunc {
 		response.WriteJSON(w, http.StatusOK, studentList)
 	}
 }
+
+func UpdateStudent(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		id := r.PathValue("id")
+
+		slog.Info("Updating student id record: ", slog.String("id", id))
+
+		intId, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			response.WriteJSON(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("invalid id")))
+			return
+		}
+
+		var student types.Student
+
+		error := json.NewDecoder(r.Body).Decode(&student)
+
+		if errors.Is(error, io.EOF) {
+			response.WriteJSON(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("empty body"))) //fmt.Errorf("empty body") for creating error with custom message
+			return
+		}
+
+		if error != nil {
+			response.WriteJSON(w, http.StatusBadRequest, response.GeneralError(err))
+			return
+		}
+
+		//request validation
+		if error := validator.New().Struct(student); error != nil {
+			validateErrors := error.(validator.ValidationErrors)
+			response.WriteJSON(w, http.StatusBadRequest, response.ValidationError(validateErrors))
+			return
+		}
+
+		updatedStudent, err := storage.UpdateStudent(intId, student.Name, student.Email, student.Age)
+		if err != nil {
+			response.WriteJSON(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+		response.WriteJSON(w, http.StatusOK, updatedStudent)
+	}
+}
